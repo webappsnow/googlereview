@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aktivasi Google Review Card</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        h2 { color: #1a73e8; margin-bottom: 10px; }
+        p { color: #5f6368; font-size: 14px; margin-bottom: 20px; }
+        .form-group { text-align: left; margin-bottom: 15px; }
+        label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 5px; color: #3c4043; }
+        input { width: 100%; padding: 10px; border: 1px solid #dadce0; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        button { background-color: #1a73e8; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 10px; transition: background 0.2s; }
+        button:hover { background-color: #1557b0; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #1a73e8; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hidden { display: none; }
+        .success-box { color: #137333; background: #e6f4ea; padding: 15px; border-radius: 6px; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div id="loading">
+            <div class="loader"></div>
+            <p>Memuat sistem kartu...</p>
+        </div>
+
+        <div id="activationSection" class="hidden">
+            <h2>Aktivasi Kartu</h2>
+            <p id="cardIdText"></p>
+            <div class="form-group">
+                <label>Nama Bisnis / Toko</label>
+                <input type="text" id="businessName" placeholder="Contoh: Kopi Kenangan Senja">
+            </div>
+            <div class="form-group">
+                <label>Link Direct Review Google Maps</label>
+                <input type="text" id="reviewLink" placeholder="https://search.google.com/local/writereview?placeid=...">
+            </div>
+            <button onclick="activateCard()">Aktifkan Sekarang</button>
+        </div>
+
+        <div id="successSection" class="hidden">
+            <div class="success-box">
+                <h3>Aktivasi Berhasil! 🎉</h3>
+                <p>Kartu ini kini sudah terhubung ke toko Anda. Halaman akan dialihkan...</p>
+            </div>
+        </div>
+        
+        <div id="errorSection" class="hidden">
+            <p style="color: #d93025; font-weight: bold;">Kartu tidak ditemukan atau kode salah.</p>
+        </div>
+    </div>
+
+    <script>
+        // --- GANTI URL DI BAWAH INI DENGAN URL WEB APP GAS ANDA ---
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbynchA-hJl-MAWgrYnzNEUvDsrkJfohWPwILtVVMWn7BrJuUOdbpOOzLOs21zAQxm90zw/exec";
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const cardId = urlParams.get('card');
+
+        if (!cardId) {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('errorSection').classList.remove('hidden');
+            document.getElementById('errorSection').innerHTML = "<p>Parameter kartu tidak valid.</p>";
+        } else {
+            checkCardStatus();
+        }
+
+        function checkCardStatus() {
+            fetch(`${SCRIPT_URL}?card=${cardId}&action=check`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loading').classList.add('hidden');
+                    if (data.status === "Active") {
+                        // Jika sudah aktif, langsung arahkan ke link Google Maps toko tersebut
+                        window.location.replace(data.reviewLink);
+                    } else if (data.status === "Pending") {
+                        // Jika belum aktif, tampilkan form aktivasi
+                        document.getElementById('cardIdText').innerText = `ID Kartu: ${cardId}`;
+                        document.getElementById('activationSection').classList.remove('hidden');
+                    } else {
+                        document.getElementById('errorSection').classList.remove('hidden');
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('errorSection').classList.remove('hidden');
+                });
+        }
+
+        function activateCard() {
+            const businessName = document.getElementById('businessName').value;
+            const reviewLink = document.getElementById('reviewLink').value;
+
+            if (!businessName || !reviewLink) {
+                alert("Harap isi semua kolom!");
+                return;
+            }
+
+            document.getElementById('activationSection').classList.add('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ cardId: cardId, businessName: businessName, reviewLink: reviewLink })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').classList.add('hidden');
+                if (data.result === "success") {
+                    document.getElementById('successSection').classList.remove('hidden');
+                    setTimeout(() => {
+                        window.location.replace(reviewLink);
+                    }, 2000);
+                } else {
+                    alert("Gagal mengaktifkan kartu.");
+                    document.getElementById('activationSection').classList.remove('hidden');
+                }
+            })
+            .catch(error => {
+                alert("Terjadi kesalahan jaringan.");
+                document.getElementById('activationSection').classList.remove('hidden');
+            });
+        }
+    </script>
+</body>
+</html>
