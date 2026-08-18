@@ -22,10 +22,9 @@
     </div>
 
     <script>
-        // Ganti URL di bawah ini dengan URL Web App Google Apps Script Anda (berakhiran /exec)
+        // Ganti dengan URL Web App Apps Script Anda yang berakhiran /exec
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbynchA-hJl-MAWgrYnzNEUvDsrkJfohWPwILtVVMWn7BrJuUOdbpOOzLOs21zAQxm90zw/exec";
 
-        // Ambil parameter ?card=... dari URL
         const urlParams = new URLSearchParams(window.location.search);
         const cardId = urlParams.get('card');
 
@@ -33,8 +32,8 @@
             document.getElementById('statusText').innerText = "Kartu tidak valid atau tidak ditemukan.";
             document.querySelector('.spinner').style.display = 'none';
         } else {
-            // Request ke Google Apps Script dengan action=redirect
-            window.location.href = `${SCRIPT_URL}?action=redirect&card=${cardId}`;
+            // Langsung alihkan menggunakan action=redirect agar mulus
+            window.location.replace(`${SCRIPT_URL}?action=redirect&card=${cardId}`);
         }
     </script>
 </body>
