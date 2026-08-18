@@ -3,38 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Review Card - Mengalihkan...</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        h3 { color: #1a73e8; margin-bottom: 10px; }
-        p { color: #5f6368; font-size: 14px; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #1a73e8; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
-</head>
-<body>
-
-    <div class="card">
-        <div class="spinner"></div>
-        <h3>Membuka Halaman Ulasan...</h3>
-        <p id="statusText">Mohon tunggu sebentar, Anda sedang diarahkan ke ulasan toko.</p>
-    </div>
-
+    <title>Smart Review Card</title>
     <script>
-        // Ganti dengan URL Web App Apps Script Anda yang berakhiran /exec
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbynchA-hJl-MAWgrYnzNEUvDsrkJfohWPwILtVVMWn7BrJuUOdbpOOzLOs21zAQxm90zw/exec";
-
+        
         const urlParams = new URLSearchParams(window.location.search);
         const cardId = urlParams.get('card');
 
-        if (!cardId) {
-            document.getElementById('statusText').innerText = "Kartu tidak valid atau tidak ditemukan.";
-            document.querySelector('.spinner').style.display = 'none';
-        } else {
-            // Langsung alihkan menggunakan action=redirect agar mulus
-            window.location.replace(`${SCRIPT_URL}?action=redirect&card=${cardId}`);
+        if (cardId) {
+            // Ambil link dari GAS
+            fetch(`${SCRIPT_URL}?action=redirect&card=${cardId}`)
+                .then(res => res.json())
+                .then(data => {
+                    let targetUrl = data.reviewLink; 
+                    
+                    // Pastikan link memiliki parameter untuk buka aplikasi (format intent)
+                    // Jika link adalah g.page atau maps.app.goo.gl, tambahkan /review
+                    if (!targetUrl.includes('/review')) {
+                        targetUrl = targetUrl.replace(/\/$/, "") + '/review';
+                    }
+
+                    // Perintah "Intent" untuk memaksa buka aplikasi Maps di Android
+                    // formatnya: intent://[linknya]#Intent;scheme=https;package=com.google.android.apps.maps;end
+                    let intentUrl = "intent://" + targetUrl.replace("https://", "") + "#Intent;scheme=https;package=com.google.android.apps.maps;end";
+                    
+                    // Eksekusi paksa buka aplikasi
+                    window.location.href = intentUrl;
+
+                    // Fallback: Jika gagal buka aplikasi, tetap buka via web
+                    setTimeout(() => {
+                        window.location.replace(targetUrl);
+                    }, 500);
+                });
         }
     </script>
+</head>
+<body>
+    <div style="text-align: center; margin-top: 50px; font-family: sans-serif;">
+        <h3>Membuka Aplikasi Maps...</h3>
+        <p>Jika aplikasi tidak terbuka, silakan klik link berikut:</p>
+        <a id="fallbackLink" href="#">Lanjutkan ke Ulasan</a>
+    </div>
 </body>
 </html>
