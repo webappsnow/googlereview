@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Setup Kartu Review</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 420px; text-align: center; }
+        h2 { color: #1a73e8; margin-bottom: 5px; }
+        p { color: #5f6368; font-size: 14px; margin-bottom: 20px; }
+        .form-group { text-align: left; margin-bottom: 15px; }
+        label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 5px; color: #3c4043; }
+        input { width: 100%; padding: 10px; border: 1px solid #dadce0; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        button { background-color: #1a73e8; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 10px; transition: background 0.2s; }
+        button:hover { background-color: #1557b0; }
+        .success-box { color: #137333; background: #e6f4ea; padding: 15px; border-radius: 6px; font-weight: 500; margin-top: 15px; text-align: left; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Admin Panel</h2>
+        <p>Input Data & Aktifkan Kartu Toko Baru</p>
+        
+        <div class="form-group">
+            <label>ID Kartu (Contoh: CARD001)</label>
+            <input type="text" id="cardId" placeholder="Masukkan ID Kartu">
+        </div>
+
+        <div class="form-group">
+            <label>Nama Toko / Bisnis</label>
+            <input type="text" id="businessName" placeholder="Contoh: Kedai Kopi Bahagia">
+        </div>
+
+        <div class="form-group">
+            <label>Link Direct Review Google Maps</label>
+            <input type="text" id="reviewLink" placeholder="https://search.google.com/local/writereview?placeid=...">
+        </div>
+        
+        <button onclick="saveCardData()">Simpan & Aktifkan Kartu</button>
+
+        <div id="resultMsg"></div>
+    </div>
+
+    <script>
+        // --- GANTI URL DI BAWAH INI DENGAN URL WEB APP GAS ANDA (yang berakhiran /exec) ---
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbynchA-hJl-MAWgrYnzNEUvDsrkJfohWPwILtVVMWn7BrJuUOdbpOOzLOs21zAQxm90zw/exec";
+
+        function saveCardData() {
+            const cardId = document.getElementById('cardId').value.trim();
+            const businessName = document.getElementById('businessName').value.trim();
+            const reviewLink = document.getElementById('reviewLink').value.trim();
+            const msgBox = document.getElementById('resultMsg');
+
+            if (!cardId || !businessName || !reviewLink) {
+                alert("Semua kolom wajib diisi!");
+                return;
+            }
+
+            msgBox.innerHTML = "<p style='color: #5f6368; margin-top:15px;'>Menyimpan ke sistem...</p>";
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ 
+                    action: "admin_save", 
+                    cardId: cardId, 
+                    businessName: businessName, 
+                    reviewLink: reviewLink 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.result === "success") {
+                    msgBox.innerHTML = `
+                        <div class="success-box">
+                            <b>Berhasil Disimpan! 🎉</b><br>
+                            Kartu <b>${cardId}</b> untuk <b>${businessName}</b> sudah aktif.<br><br>
+                            Silakan buat QR code untuk link:<br>
+                            <code>?card=${cardId}</code>
+                        </div>`;
+                    document.getElementById('cardId').value = "";
+                    document.getElementById('businessName').value = "";
+                    document.getElementById('reviewLink').value = "";
+                } else {
+                    msgBox.innerHTML = `<p style="color: #d93025; margin-top:15px;">Gagal menyimpan data.</p>`;
+                }
+            })
+            .catch(error => {
+                msgBox.innerHTML = `<p style="color: #d93025; margin-top:15px;">Terjadi kesalahan jaringan.</p>`;
+            });
+        }
+    </script>
+</body>
+</html>
